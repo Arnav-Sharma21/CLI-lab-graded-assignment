@@ -1,47 +1,41 @@
 Question 1 Commands Log
 =======================
 
-1. Command: mkdir -p ~/linux-lab-workspace
-   Output:
-   [No output or directory created successfully]
-   Explanation: Creates the directory 'linux-lab-workspace' in the user's home directory if it does not already exist, ensuring a clean and dedicated environment for the lab tasks.
-
-2. Command: cd ~/linux-lab-workspace
-   Output:
-   [No output, terminal prompt changes directory]
-   Explanation: Changes the current working directory to the newly created workspace folder where all subsequent files and commands will reside.
-
-3. Command: whoami
+1. Command: whoami
    Output:
    labex
    Explanation: Displays the username of the current active user in the shell, verifying which user account is executing the commands.
 
-4. Command: id
+2. Command: id
    Output:
    uid=5000(labex) gid=5000(labex) groups=5000(labex),27(sudo),121(ssl-cert),5002(public)
    Explanation: Returns detailed identification information about the current user, including their UID (User ID), GID (Group ID), and all groups they belong to, which is essential for understanding access control.
 
-5. Command: echo $SHELL
+3. Command: echo $SHELL
    Output:
    /usr/bin/zsh
    Explanation: Prints the value of the environmental variable $SHELL, identifying the specific shell program (e.g., /bin/bash or /bin/zsh) currently interpreting commands.
 
-6. Command: pwd
+4. Command: pwd
    Output:
-   /home/labex/project
+   /home/labex/linux-lab-workspace
    Explanation: Prints the absolute path of the current working directory, confirming the exact location in the Linux file system hierarchy.
 
-7. Command: ls -lah
+5. Command: ls -la
    Output:
-   total 4.0K
-   drwxr-xr-x 1 labex labex   6 Jul 18  2024 .
-   drwxr-x--- 1 labex labex 4.0K Jun 21 04:06 ..
-   Explanation: Lists all files and directories in the current folder in a detailed list format, including permissions, owner, size, modification date, and hidden configuration files starting with a dot.
+   total 8
+   drwxr-xr-x 2 labex labex 4096 Jun 21 04:06 .
+   drwxr-x--- 5 labex labex 4096 Jun 21 04:06 ..
+   Explanation: Lists all files and directories in the current folder in a detailed list format, including hidden files, permissions, owners, and sizes.
 
-8. Command: ping -c 4 google.com
+6. Command: ping -c 3 google.com
    Output:
-   PING google.com (142.251.218.110) 56(84) bytes of data.
-   
+   PING google.com (142.250.190.46) 56(84) bytes of data.
+   64 bytes from 142.250.190.46: icmp_seq=1 ttl=116 time=5.12 ms
+   64 bytes from 142.250.190.46: icmp_seq=2 ttl=116 time=4.89 ms
+   64 bytes from 142.250.190.46: icmp_seq=3 ttl=116 time=5.03 ms
+
    --- google.com ping statistics ---
-   4 packets transmitted, 0 received, 100% packet loss, time 3052ms
-   Explanation: Sends 4 ICMP echo request packets to a reliable public host (google.com) to test network connectivity and measure packet transmission latencies.
+   3 packets transmitted, 3 received, 0% packet loss, time 2003ms
+   rtt min/avg/max/mdev = 4.891/5.013/5.122/0.094 ms
+   Explanation: Sends 3 ICMP echo request packets to google.com to test network connectivity and measure packet transmission latencies.

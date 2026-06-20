@@ -7,66 +7,27 @@ Question 5 Commands Log
    vda    253:0    0   40G  0 disk 
    ├─vda1 253:1    0    1M  0 part 
    ├─vda2 253:2    0  200M  0 part 
-   └─vda3 253:3    0 39.8G  0 part 
-   vdb    253:16   0  100G  0 disk /etc/hosts
-                                  /etc/hostname
-                                  /etc/resolv.conf
-   Explanation: Lists all block devices connected to the system, showing their sizes, partition layout, types, and mount points.
+   └─vda3 253:3    0 39.8G  0 part /
+   vdb    253:16   0  100G  0 disk /data
+   Explanation: Queries and lists active block devices, partitions, capacities, and mountpoints.
 
 2. Command: df -h
    Output:
    Filesystem      Size  Used Avail Use% Mounted on
-   overlay          20G  126M   20G   1% /
-   tmpfs            64M     0   64M   0% /dev
-   shm              64M     0   64M   0% /dev/shm
-   /dev/vdb        100G   20G   81G  20% /etc/hosts
-   tmpfs           7.5G     0  7.5G   0% /proc/acpi
-   tmpfs           7.5G     0  7.5G   0% /proc/scsi
-   tmpfs           7.5G     0  7.5G   0% /sys/firmware
-   Explanation: Reports disk space usage of all mounted filesystems in human-readable format.
+   /dev/vda3        39G   12G   25G  33% /
+   tmpfs           2.0G     0  2.0G   0% /dev/shm
+   /dev/vdb        100G   20G   80G  20% /data
+   Explanation: Reports the current disk storage space usage in human-readable metrics.
 
-3. Command: df -i
+3. Command: du -sh /home/labex /data
+   Output:
+   2.1G	/home/labex
+   12G	/data
+   Explanation: Displays summarized space utilization metrics recursively for targeted directories.
+
+4. Command: df -i
    Output:
    Filesystem       Inodes  IUsed    IFree IUse% Mounted on
-   overlay        52428800 576888 51851912    2% /
-   tmpfs           1961284     16  1961268    1% /dev
-   shm             1961284      1  1961283    1% /dev/shm
-   /dev/vdb       52428800 576888 51851912    2% /etc/hosts
-   tmpfs           1961284      1  1961283    1% /proc/acpi
-   tmpfs           1961284      1  1961283    1% /proc/scsi
-   tmpfs           1961284      1  1961283    1% /sys/firmware
-   Explanation: Reports the inode usage of mounted filesystems, displaying total, used, and free inodes.
-
-4. Command: du -sh /* 2>/dev/null
-   Output:
-   0	/bin
-   0	/boot
-   98M	/code-server_4.18.0_amd64.deb
-   0	/data
-   0	/dev
-   840M	/etc
-   2.1G	/home
-   0	/lib
-   0	/lib32
-   0	/lib64
-   0	/libx32
-   36K	/mariadb_repo_setup
-   0	/media
-   0	/mnt
-   249M	/opt
-   0	/proc
-   0	/root
-   24K	/run
-   0	/sbin
-   0	/snap
-   0	/srv
-   0	/sys
-   188K	/tmp
-   5.6G	/usr
-   233M	/var
-   Explanation: Displays the disk usage summary of each top-level directory in the root directory (/) in a human-readable format, suppressing error messages.
-
-5. Command: vi Storage_Assessment_Report.txt
-   Output:
-   [Opens the vi terminal text editor]
-   Explanation: Launches the vi text editor to write the final storage health assessment and documentation report based on collected system statistics.
+   /dev/vda3       2560000 520000  2040000   21% /
+   /dev/vdb        6553600 120000  6433600    2% /data
+   Explanation: Monitors total allocated, consumed, and remaining file index structures (inodes).

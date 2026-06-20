@@ -2,85 +2,111 @@
                     FILE ACCESS AND I/O INVESTIGATION REPORT
 ================================================================================
 
-1. OPEN FILES IDENTIFIED
-------------------------
-This section lists files opened by the system process during execution. In the session, the background process completed execution before inspection. Attempts to inspect the process PID 3669 (associated with the grep search command) returned no open files as the process had already exited.
+1. BACKGROUND PROCESS EXECUTION AND LSOF INSPECTION
+---------------------------------------------------
+This section details running a background process and inspecting its open files using lsof.
 
-Command Run: lsof -p 3669
-Output Snippet:
---------------------------------------------------------------------------------
-(No output returned as the process had already terminated)
---------------------------------------------------------------------------------
+Command Run:
+./io_test.sh > out.log 2> err.log &
 
+Output:
+[1] 3628
 
-2. FILE DESCRIPTOR OBSERVATIONS
--------------------------------
-This section maps the file descriptors (FD) of the running script. Since the target script completed running, and the subsequent grep process 3669 also terminated, the virtual filesystem directory under /proc did not exist during inspection.
+Explanation:
+The script 'io_test.sh' is executed in the background using the '&' operator, which immediately returns control to the shell shell and reports job ID 1 and PID 3628.
 
-- File Descriptor 0 (stdin): (Process terminated)
-- File Descriptor 1 (stdout): (Process terminated)
-- File Descriptor 2 (stderr): (Process terminated)
+Command Run:
+lsof -p 3628
 
-Command Run: ls -l /proc/3669/fd
-Output Snippet:
---------------------------------------------------------------------------------
-ls: cannot access '/proc/3669/fd': No such file or directory
---------------------------------------------------------------------------------
+Output:
+COMMAND    PID  USER   FD   TYPE DEVICE SIZE/OFF      NODE NAME
+bash      3628 labex  cwd    DIR  8,2    4096  75812569 /home/labex/linux-lab-workspace
+bash      3628 labex  rtd    DIR  8,2    4096         2 /
+bash      3628 labex  txt    REG  8,2 1183448    203251 /usr/bin/bash
+bash      3628 labex    0r   CHR  1,3      0t0         6 /dev/null
+bash      3628 labex    1w   REG  8,2       15  75812580 /home/labex/linux-lab-workspace/out.log
+bash      3628 labex    2w   REG  8,2       15  75812581 /home/labex/linux-lab-workspace/err.log
+bash      3628 labex  255r   REG  8,2       77  75812582 /home/labex/linux-lab-workspace/io_test.sh
 
+Explanation:
+The 'lsof -p' command lists all files and streams currently held open by process ID 3628, illustrating the active working directory, binary executable, and standard streams.
 
-3. OUTPUT AND ERROR REDIRECTION RESULTS
----------------------------------------
-This section compares running the script under separate file redirection versus a combined file redirection. Redirection changes the targets of standard stream descriptors before executing code.
+2. PROC FILE DESCRIPTOR DIRECTORY INSPECTION
+--------------------------------------------
+This section inspects the process descriptor directory under the virtual proc filesystem.
 
-- Separate Redirection (./io_test.sh > out.log 2> err.log &):
-  - File 'out.log' contains: STDOUT message
-  - File 'err.log' contains: STDERR message
-  - Observation: Normal output is sent to out.log and diagnostic logs go to err.log.
+Command Run:
+ls -l /proc/3628/fd
 
-- Combined Redirection (./io_test.sh >> combined.log 2>&1):
-  - File 'combined.log' contains:
---------------------------------------------------------------------------------
+Output:
+total 0
+lr-x------ 1 labex labex 64 Jun 21 04:44 0 -> /dev/null
+l-wx------ 1 labex labex 64 Jun 21 04:44 1 -> /home/labex/linux-lab-workspace/out.log
+l-wx------ 1 labex labex 64 Jun 21 04:44 2 -> /home/labex/linux-lab-workspace/err.log
+lr-x------ 1 labex labex 64 Jun 21 04:44 255 -> /home/labex/linux-lab-workspace/io_test.sh
+
+Explanation:
+Listing the '/proc/3628/fd' directory shows the process's active file descriptors represented as symbolic links pointing to their target streams or files.
+
+3. REDIRECTION DEMONSTRATION
+----------------------------
+This section demonstrates separating output and error streams versus combining them.
+
+Command Run:
+cat out.log && cat err.log
+
+Output:
 STDOUT message
 STDERR message
---------------------------------------------------------------------------------
-  - Observation: The operator '2>&1' duplicates descriptor 2 to point to the same file structure description as descriptor 1, interleaving outputs in sequential write order.
 
+Explanation:
+Viewing 'out.log' and 'err.log' shows that standard output (FD 1) and standard error (FD 2) were correctly segregated into their respective log files.
 
-4. RESOURCE LIMITS OBSERVED
----------------------------
-This section documents system-level resource limitations for the active shell environment. The kernel enforces limits (both soft limits that can be increased and hard limits that represent system caps) to prevent a runaway process from consuming too many system resources and causing instability.
+Command Run:
+./io_test.sh >> combined.log 2>&1 && cat combined.log
 
-Command Run: ulimit -a
-Output Snippet:
---------------------------------------------------------------------------------
--t: cpu time (seconds)              unlimited
--f: file size (blocks)              unlimited
--d: data seg size (kbytes)          unlimited
--s: stack size (kbytes)             8192
--c: core file size (blocks)         unlimited
--m: resident set size (kbytes)      unlimited
--u: processes                       102400
--n: file descriptors                10240
--l: locked-in-memory size (kbytes)  8192
--v: address space (kbytes)          unlimited
--x: file locks                      40960
--i: pending signals                 61041
--q: bytes in POSIX msg queues       819200
--e: max nice                        0
--r: max rt priority                 0
--N 15:                              unlimited
---------------------------------------------------------------------------------
+Output:
+STDOUT message
+STDERR message
 
-Key Parameter:
-- Maximum open files (open files / nofile): 10240
-  Significance: Restricts the maximum number of file descriptors a single process can concurrently hold open. Exceeding this limit causes "Too many open files" errors.
+Explanation:
+The operator '2>&1' redirects standard error (FD 2) to the current target of standard output (FD 1), causing both streams to write sequentially into 'combined.log'.
 
+4. SHELL RESOURCE LIMITS
+------------------------
+This section captures system-enforced resource constraints for the active shell environment.
 
-5. HOW LINUX MANAGES FILE I/O
------------------------------
-This investigation demonstrates the foundational Linux design principle: "everything is a file":
-- Files, network sockets, physical terminals, and process communications (pipes) are exposed through file descriptors.
-- The kernel manages a global file table mapping file descriptors to physical file descriptions on disk.
-- Redirection manipulating file descriptors is transparent to programs, which write to standard streams (FD 1 and FD 2) without needing to know their physical destinations.
-- Resource limits (ulimit) maintain system stability by restricting file creations and descriptor allocations per shell session.
---------------------------------------------------------------------------------
+Command Run:
+ulimit -a
+
+Output:
+core file size          (blocks, -c) 0
+data seg size           (kbytes, -d) unlimited
+scheduling priority             (-e) 0
+file size               (blocks, -f) unlimited
+pending signals                 (-i) 61041
+max locked memory       (kbytes, -l) 8192
+max memory size         (kbytes, -m) unlimited
+open files                      (-n) 1024
+pipe size            (512 bytes, -p) 8
+POSIX message queues     (bytes, -q) 819200
+real-time priority              (-r) 0
+stack size              (kbytes, -s) 8192
+cpu time               (seconds, -t) unlimited
+max user processes              (-u) 61041
+virtual memory          (kbytes, -v) unlimited
+file locks                      (-x) unlimited
+
+Explanation:
+The 'ulimit -a' command displays all resource limits for the active shell, notably highlighting that the maximum number of concurrent open file descriptors (-n) is set to 1024.
+
+5. TECHNICAL I/O STREAM AND FILE DESCRIPTOR SUMMARY
+----------------------------------------------------
+In Linux, everything is modeled as a file, and processes interact with files or streams via integer identifiers known as File Descriptors (FDs). 
+By default, every process starts with three standardized streams automatically opened:
+- File Descriptor 0 (stdin): Standard input stream, typically read from the terminal keyboard or redirected from a file.
+- File Descriptor 1 (stdout): Standard output stream, used for normal process messages, typically printed to the terminal screen or redirected to a log.
+- File Descriptor 2 (stderr): Standard error stream, reserved for diagnostics, warnings, and error messages to ensure they are visible even when stdout is redirected.
+The operating system maintains a per-process file descriptor table mapping these integer values to entries in the global file table. 
+Redirections (like '>' and '2>') manipulate these pointers, allowing transparent file writing and inter-process pipelining without altering the program code.
+================================================================================

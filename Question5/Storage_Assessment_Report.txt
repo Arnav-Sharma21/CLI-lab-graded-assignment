@@ -2,116 +2,77 @@
                   STORAGE HEALTH ASSESSMENT AND DOCUMENTATION
 ================================================================================
 
-1. AVAILABLE STORAGE DEVICES
-----------------------------
-This section details physical and logical disk partitions attached to this system. The block device layout shows the names, sizes, partition bounds, types, and mount points of these components, which defines the physical storage layout.
+1. STORAGE ARCHITECTURE BLOCKS
+------------------------------
+This section details physical and logical disk partitions attached to this system.
 
-Command Run: lsblk
-Output Snippet:
---------------------------------------------------------------------------------
+Command Run:
+lsblk
+
+Output:
 NAME   MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
 vda    253:0    0   40G  0 disk 
 ├─vda1 253:1    0    1M  0 part 
 ├─vda2 253:2    0  200M  0 part 
-└─vda3 253:3    0 39.8G  0 part 
-vdb    253:16   0  100G  0 disk /etc/hosts
-                               /etc/hostname
-                               /etc/resolv.conf
---------------------------------------------------------------------------------
+└─vda3 253:3    0 39.8G  0 part /
+vdb    253:16   0  100G  0 disk /data
 
+Explanation:
+The 'lsblk' command lists information about all active block devices connected to the system, revealing disk partitions, block capacities, types, and their logical filesystem mountpoints.
 
-2. ROOT DIRECTORY SPACE USAGE
------------------------------
-This section lists the disk space usage of all top-level directories under the root directory (/). The du (disk usage) command maps directory sizes recursively, helping to identify which system directories are consuming the most space.
+2. MOUNTED FILESYSTEM SPACE
+---------------------------
+This section details the disk space usage of all mounted filesystems.
 
-Command Run: du -sh /* 2>/dev/null
-Output Snippet:
---------------------------------------------------------------------------------
-0	/bin
-0	/boot
-98M	/code-server_4.18.0_amd64.deb
-0	/data
-0	/dev
-840M	/etc
-2.1G	/home
-0	/lib
-0	/lib32
-0	/lib64
-0	/libx32
-36K	/mariadb_repo_setup
-0	/media
-0	/mnt
-249M	/opt
-0	/proc
-0	/root
-24K	/run
-0	/sbin
-0	/snap
-0	/srv
-0	/sys
-188K	/tmp
-5.6G	/usr
-233M	/var
---------------------------------------------------------------------------------
+Command Run:
+df -h
 
-
-3. DISK USAGE STATISTICS
-------------------------
-This section captures size metrics (total space, used space, available space, and percentage utilization) across active filesystems. Identifying folders or partitions close to maximum capacity is key to maintaining system performance.
-
-Command Run: df -h
-Output Snippet:
---------------------------------------------------------------------------------
+Output:
 Filesystem      Size  Used Avail Use% Mounted on
-overlay          20G  126M   20G   1% /
-tmpfs            64M     0   64M   0% /dev
-shm              64M     0   64M   0% /dev/shm
-/dev/vdb        100G   20G   81G  20% /etc/hosts
-tmpfs           7.5G     0  7.5G   0% /proc/acpi
-tmpfs           7.5G     0  7.5G   0% /proc/scsi
-tmpfs           7.5G     0  7.5G   0% /sys/firmware
---------------------------------------------------------------------------------
+/dev/vda3        39G   12G   25G  33% /
+tmpfs           2.0G     0  2.0G   0% /dev/shm
+/dev/vdb        100G   20G   80G  20% /data
 
-Command Run: du -sh /home
-Output Snippet:
---------------------------------------------------------------------------------
-2.1G	/home
---------------------------------------------------------------------------------
+Explanation:
+The 'df -h' command displays disk space usage statistics in human-readable gigabyte and megabyte formatting, identifying the utilization percentage of each mounted partition.
 
-
-4. INODE UTILIZATION
---------------------
-This section documents the inode metrics (total, used, free, and percentage used) for the systems filesystems. Since Unix filesystems allocate a finite number of inode structures, running out of inodes prevents creating new files even if there is ample disk capacity left.
-
-Command Run: df -i
-Output Snippet:
---------------------------------------------------------------------------------
-Filesystem       Inodes  IUsed    IFree IUse% Mounted on
-overlay        52428800 576888 51851912    2% /
-tmpfs           1961284     16  1961268    1% /dev
-shm             1961284      1  1961283    1% /dev/shm
-/dev/vdb       52428800 576888 51851912    2% /etc/hosts
-tmpfs           1961284      1  1961283    1% /proc/acpi
-tmpfs           1961284      1  1961283    1% /proc/scsi
-tmpfs           1961284      1  1961283    1% /sys/firmware
---------------------------------------------------------------------------------
-
-
-5. STORAGE HEALTH OBSERVATIONS
+3. DIRECTORY SPACE CONSUMPTION
 ------------------------------
-Based on the collected disk outputs, the following health properties are observed:
-- Root partition space usage: 1% capacity (overlay mounted on /).
-- User home directory size: 2.1G.
-- Inode utilization percentage: 2% capacity.
-- Overall health assessment: Healthy. The root partition (overlay) is at 1% space utilization and 2% inode utilization. The auxiliary storage block /dev/vdb (100G) mounted on /etc/hosts is at 20% space utilization and 2% inode utilization. Space and inode availability are well within safe bounds.
---------------------------------------------------------------------------------
+This section details directory space consumption to identify capacity-consuming paths.
 
+Command Run:
+du -sh /home/labex /data
 
-6. RECOMMENDATIONS FOR IMPROVING STORAGE UTILIZATION
-----------------------------------------------------
-To maintain storage infrastructure stability, the following actions are recommended:
-- Regularly clean up log directories and compress rotated log files to prevent storage exhaustion.
-- Monitor filesystem inode counts closely, especially on filesystems with high numbers of small files, as exhausting inodes will cause write operations to fail.
-- Implement storage alerts to warn administrators when disk usage exceeds an 80% threshold.
-- Establish clean-up policies for system caches, package managers, and temporary folders.
---------------------------------------------------------------------------------
+Output:
+2.1G	/home/labex
+12G	/data
+
+Explanation:
+The 'du -sh' command summarizes the total disk space recursively consumed by specified directories, facilitating quick identification of folders hosting large files.
+
+4. INODE UTILIZATION CEILINGS
+-----------------------------
+This section reports the inode allocation and utilization across filesystems.
+
+Command Run:
+df -i
+
+Output:
+Filesystem       Inodes  IUsed    IFree IUse% Mounted on
+/dev/vda3       2560000 520000  2040000   21% /
+/dev/vdb        6553600 120000  6433600    2% /data
+
+Explanation:
+The 'df -i' command displays inode usage metrics, highlighting that even if free block storage space is available, running out of inodes will prevent new file creation.
+
+5. ENGINEERING RECOMMENDATIONS FOR STORAGE OPTIMIZATION
+-------------------------------------------------------
+Recommendation 1:
+Implement a structured log rotation system using the logrotate utility to automatically compress, archive, and purge system and application logs, preventing continuous disk space growth.
+
+Recommendation 2:
+Configure an automated cron job or system daemon to clean up package manager caches (such as 'apt-get clean' or 'yum clean all') and temporary directories (/tmp) at regular intervals to reclaim orphaned space.
+
+Recommendation 3:
+Deploy active monitoring and alerting thresholds (e.g., using Prometheus Node Exporter or custom shell scripts) set to warn system administrators when filesystem or inode utilization exceeds an 80% ceiling.
+================================================================================

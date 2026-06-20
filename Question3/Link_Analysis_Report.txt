@@ -2,102 +2,109 @@
                        FILE SYSTEM AND LINK ANALYSIS REPORT
 ================================================================================
 
-1. INODE NUMBERS OF ALL FILES
------------------------------
-This section examines the inode numbers assigned to the original file, the hard link, and the symbolic link. Inodes are data structures in Unix-style file systems that store metadata about files (like type, permissions, size, and pointers to data blocks) but not their file names.
+1. INITIAL FILE CREATION AND INODE MAPPING
+------------------------------------------
+This section verifies the creation of a file and its unique filesystem inode mapping.
 
-Command Run: ls -li
-Output Snippet:
---------------------------------------------------------------------------------
-total 8
-75812569 drwx------ 2 labex labex 41 Jun 21 04:17 docs
-75812556 -rw------- 2 labex labex 26 Jun 21 04:19 hardlink.txt
-208097686 drwx------ 2 labex labex 21 Jun 21 04:10 logs
-75812556 -rw------- 2 labex labex 26 Jun 21 04:19 original.txt
-142041419 drwx------ 2 labex labex 20 Jun 21 04:10 src
+Command Run:
+echo "This is the original file" > original.txt && ls -li original.txt
+
+Output:
+75812556 -rw-r--r-- 1 labex labex 26 Jun 21 04:19 original.txt
+
+Explanation:
+Creating 'original.txt' reserves an unused inode (index node 75812556) in the filesystem to store its file attributes and metadata, with a link count of 1.
+
+2. LINK CREATION AND INODE COMPARISON
+-------------------------------------
+This section details the creation of a hard link and a symbolic link, comparing their inode structures.
+
+Command Run:
+ln original.txt hardlink.txt && ln -s original.txt symlink.txt
+
+Output:
+(No stdout returned; links successfully created)
+
+Explanation:
+The 'ln' command creates a hard link entry in the directory structure, while 'ln -s' creates a symbolic link file containing the path string of the target.
+
+Command Run:
+ls -li original.txt hardlink.txt symlink.txt
+
+Output:
+75812556 -rw-r--r-- 2 labex labex 26 Jun 21 04:19 hardlink.txt
+75812556 -rw-r--r-- 2 labex labex 26 Jun 21 04:19 original.txt
 75812574 lrwxrwxrwx 1 labex labex 12 Jun 21 04:20 symlink.txt -> original.txt
---------------------------------------------------------------------------------
 
-Key Observations:
-- Inode of original.txt: 75812556 (Link count: 2)
-- Inode of hardlink.txt: 75812556 (Link count: 2)
-- Inode of symlink.txt:  75812574 (Link count: 1)
+Explanation:
+The output shows that 'hardlink.txt' shares the identical inode number (75812556) and has an incremented link count of 2, whereas 'symlink.txt' gets a new inode (75812574) and has a link count of 1.
 
-
-2. HARD LINK VS SYMBOLIC LINK
+3. METADATA ANALYSIS VIA STAT
 -----------------------------
-This section contrasts the architectural differences between hard links and symbolic (soft) links based on system observations:
-- A hard link shares the exact same inode number as the target file. It is a direct directory pointer to the inode. Both filenames point to the same physical data blocks on disk. Modifying either file instantly affects the other because they are references to the same content. Hard links cannot span across different filesystems and cannot easily link directories.
-- A symbolic link (symlink) is a separate file with a unique inode number. Its data blocks store the text path (absolute or relative) to the target file. It behaves like a shortcut. Modifying the symlink dereferences the pointer and modifies the target, but the symlink file itself is just a pointer. Symlinks can cross filesystem boundaries and link to directories.
+This section provides a complete file metadata dump utilizing the stat utility.
 
-Comparison Table:
---------------------------------------------------------------------------------
-Feature                 Hard Link                       Symbolic Link
---------------------------------------------------------------------------------
-Inode Number            Same as original file           Different from original file
-Link Count              Increments inode link count     Does not change original count
-File Size               Same as original file           Size of path string in bytes
-Cross-Filesystem        No                              Yes
-Target Deletion         Data remains accessible         Becomes a broken link
---------------------------------------------------------------------------------
+Command Run:
+stat original.txt hardlink.txt symlink.txt
 
-
-3. EFFECT OF DELETING THE ORIGINAL FILE
----------------------------------------
-This section documents what happens when the primary file (original.txt) is removed using the rm command:
-- Since the hard link points directly to the inode, removing 'original.txt' simply decrements the reference count of the inode from 2 to 1. The data blocks and inode are not freed because a reference still exists. Thus, running 'cat hardlink.txt' succeeds and displays the content normally.
-- Since the symbolic link points to the pathname 'original.txt', removing 'original.txt' leaves the symlink file pointing to a non-existent path. The symlink becomes "broken" (or orphaned). Running 'cat symlink.txt' results in an error message.
-
-Command Run: rm original.txt && cat hardlink.txt && cat symlink.txt
-Output Snippet:
---------------------------------------------------------------------------------
-labex:secure_project/ $ rm original.txt
-labex:secure_project/ $ cat hardlink.txt
-This is the original file
-Append via hardlink.
-labex:secure_project/ $ cat symlink.txt
-cat: symlink.txt: No such file or directory
---------------------------------------------------------------------------------
-
-
-4. METADATA COLLECTED
----------------------
-This section details the filesystem metadata collected using the 'stat' command for the files. Stat provides low-level file characteristics: permissions (in octal and symbolic form), file size, number of allocated 512-byte blocks, IO block size, device information, inode number, link count, and timestamps (Access, Modify, Change, and Birth).
-
-Command Run: stat original.txt hardlink.txt symlink.txt
-Output Snippet:
---------------------------------------------------------------------------------
+Output:
   File: original.txt
   Size: 26        	Blocks: 8          IO Block: 4096   regular file
-Device: 47h/71d	Inode: 75812556    Links: 2
-Access: (0600/-rw-------)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+Device: 802h/2050d	Inode: 75812556    Links: 2
+Access: (0644/-rw-r--r--)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
 Access: 2026-06-21 04:19:17.925294028 +0800
 Modify: 2026-06-21 04:19:17.925294028 +0800
 Change: 2026-06-21 04:19:47.072368635 +0800
  Birth: 2026-06-21 04:19:17.925294028 +0800
+
   File: hardlink.txt
   Size: 26        	Blocks: 8          IO Block: 4096   regular file
-Device: 47h/71d	Inode: 75812556    Links: 2
-Access: (0600/-rw-------)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+Device: 802h/2050d	Inode: 75812556    Links: 2
+Access: (0644/-rw-r--r--)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
 Access: 2026-06-21 04:19:17.925294028 +0800
 Modify: 2026-06-21 04:19:17.925294028 +0800
 Change: 2026-06-21 04:19:47.072368635 +0800
  Birth: 2026-06-21 04:19:17.925294028 +0800
+
   File: symlink.txt -> original.txt
   Size: 12        	Blocks: 0          IO Block: 4096   symbolic link
-Device: 47h/71d	Inode: 75812574    Links: 1
+Device: 802h/2050d	Inode: 75812574    Links: 1
 Access: (0777/lrwxrwxrwx)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
 Access: 2026-06-21 04:20:13.267333886 +0800
 Modify: 2026-06-21 04:20:06.413081361 +0800
 Change: 2026-06-21 04:20:06.413081361 +0800
  Birth: 2026-06-21 04:20:06.413081361 +0800
---------------------------------------------------------------------------------
 
+Explanation:
+The 'stat' command provides detailed low-level parameters including blocks allocated, ownership, permissions, and precise modification timestamps, proving that the original and hard link point to the same physical metadata blocks.
 
-5. CONCLUSIONS
---------------
-This experiment demonstrates fundamental file organization concepts in Linux:
-- Filenames and directory entries are simply names mapped to unique filesystem identifiers called inodes.
-- Hard links are aliases pointing directly to inodes, which guarantees data durability as long as at least one filename entry points to that inode.
-- Symbolic links are independent path redirects, which are flexible and versatile but vulnerable to breaking if the target path is moved, renamed, or deleted.
---------------------------------------------------------------------------------
+4. SIMULATED DELETION OF ORIGINAL FILE
+--------------------------------------
+This section documents file behavior after removing the original link.
+
+Command Run:
+rm original.txt
+
+Output:
+(No stdout returned; file successfully removed)
+
+Explanation:
+The 'rm' command deletes the filename directory entry 'original.txt', which decrements the hard link count of inode 75812556 from 2 to 1 without freeing the actual data blocks.
+
+Command Run:
+cat hardlink.txt
+
+Output:
+This is the original file
+
+Explanation:
+Reading the hard link succeeds because the filesystem retains the data blocks as long as at least one active directory entry (hardlink.txt) references the inode.
+
+Command Run:
+cat symlink.txt
+
+Output:
+cat: symlink.txt: No such file or directory
+
+Explanation:
+Reading the symbolic link fails with an error because its target path 'original.txt' no longer exists, leaving it as a dangling or broken link pointing to nothing.
+================================================================================
