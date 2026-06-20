@@ -1,0 +1,86 @@
+================================================================================
+                    FILE ACCESS AND I/O INVESTIGATION REPORT
+================================================================================
+
+1. OPEN FILES IDENTIFIED
+------------------------
+This section lists files opened by the system process during execution. In the session, the background process completed execution before inspection. Attempts to inspect the process PID 3669 (associated with the grep search command) returned no open files as the process had already exited.
+
+Command Run: lsof -p 3669
+Output Snippet:
+--------------------------------------------------------------------------------
+(No output returned as the process had already terminated)
+--------------------------------------------------------------------------------
+
+
+2. FILE DESCRIPTOR OBSERVATIONS
+-------------------------------
+This section maps the file descriptors (FD) of the running script. Since the target script completed running, and the subsequent grep process 3669 also terminated, the virtual filesystem directory under /proc did not exist during inspection.
+
+- File Descriptor 0 (stdin): (Process terminated)
+- File Descriptor 1 (stdout): (Process terminated)
+- File Descriptor 2 (stderr): (Process terminated)
+
+Command Run: ls -l /proc/3669/fd
+Output Snippet:
+--------------------------------------------------------------------------------
+ls: cannot access '/proc/3669/fd': No such file or directory
+--------------------------------------------------------------------------------
+
+
+3. OUTPUT AND ERROR REDIRECTION RESULTS
+---------------------------------------
+This section compares running the script under separate file redirection versus a combined file redirection. Redirection changes the targets of standard stream descriptors before executing code.
+
+- Separate Redirection (./io_test.sh > out.log 2> err.log &):
+  - File 'out.log' contains: STDOUT message
+  - File 'err.log' contains: STDERR message
+  - Observation: Normal output is sent to out.log and diagnostic logs go to err.log.
+
+- Combined Redirection (./io_test.sh >> combined.log 2>&1):
+  - File 'combined.log' contains:
+--------------------------------------------------------------------------------
+STDOUT message
+STDERR message
+--------------------------------------------------------------------------------
+  - Observation: The operator '2>&1' duplicates descriptor 2 to point to the same file structure description as descriptor 1, interleaving outputs in sequential write order.
+
+
+4. RESOURCE LIMITS OBSERVED
+---------------------------
+This section documents system-level resource limitations for the active shell environment. The kernel enforces limits (both soft limits that can be increased and hard limits that represent system caps) to prevent a runaway process from consuming too many system resources and causing instability.
+
+Command Run: ulimit -a
+Output Snippet:
+--------------------------------------------------------------------------------
+-t: cpu time (seconds)              unlimited
+-f: file size (blocks)              unlimited
+-d: data seg size (kbytes)          unlimited
+-s: stack size (kbytes)             8192
+-c: core file size (blocks)         unlimited
+-m: resident set size (kbytes)      unlimited
+-u: processes                       102400
+-n: file descriptors                10240
+-l: locked-in-memory size (kbytes)  8192
+-v: address space (kbytes)          unlimited
+-x: file locks                      40960
+-i: pending signals                 61041
+-q: bytes in POSIX msg queues       819200
+-e: max nice                        0
+-r: max rt priority                 0
+-N 15:                              unlimited
+--------------------------------------------------------------------------------
+
+Key Parameter:
+- Maximum open files (open files / nofile): 10240
+  Significance: Restricts the maximum number of file descriptors a single process can concurrently hold open. Exceeding this limit causes "Too many open files" errors.
+
+
+5. HOW LINUX MANAGES FILE I/O
+-----------------------------
+This investigation demonstrates the foundational Linux design principle: "everything is a file":
+- Files, network sockets, physical terminals, and process communications (pipes) are exposed through file descriptors.
+- The kernel manages a global file table mapping file descriptors to physical file descriptions on disk.
+- Redirection manipulating file descriptors is transparent to programs, which write to standard streams (FD 1 and FD 2) without needing to know their physical destinations.
+- Resource limits (ulimit) maintain system stability by restricting file creations and descriptor allocations per shell session.
+--------------------------------------------------------------------------------

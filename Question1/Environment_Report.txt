@@ -1,0 +1,59 @@
+================================================================================
+                    LINUX ENVIRONMENT VERIFICATION REPORT
+================================================================================
+
+1. USERNAME AND GROUPS
+----------------------
+This section verifies the user identity and group affiliations under which the session is operating. Knowing the current user is critical for determining file system access and system administration privileges. Group assignments represent the system's role-based access control (RBAC), determining what files or resources the user can read, write, or execute.
+
+Command Run: whoami && id
+Output Snippet:
+--------------------------------------------------------------------------------
+labex
+uid=5000(labex) gid=5000(labex) groups=5000(labex),27(sudo),121(ssl-cert),5002(public)
+--------------------------------------------------------------------------------
+
+2. CURRENT SHELL
+----------------
+This section documents the active command-line interpreter (shell) processing inputs for the session. The shell environment dictates the syntax of commands, script execution behavior, available built-in commands, and environmental initialization files (such as .bashrc or .zshrc) that load upon login.
+
+Command Run: echo $SHELL
+Output Snippet:
+--------------------------------------------------------------------------------
+/usr/bin/zsh
+--------------------------------------------------------------------------------
+
+3. CURRENT WORKING DIRECTORY
+----------------------------
+This section identifies the absolute physical path of the directory where the user is currently working within the Linux filesystem hierarchical tree. Confirming this path is crucial for verifying that files are created, accessed, or modified in the correct logical workspace, preventing accidental overwrites.
+
+Command Run: pwd
+Output Snippet:
+--------------------------------------------------------------------------------
+/home/labex/project
+--------------------------------------------------------------------------------
+
+4. FILES AND DIRECTORIES IN WORKSPACE
+-------------------------------------
+This section details the inventory of the workspace directory. It displays all standard files, directories, and hidden system files (indicated by a leading dot) along with their sizes, owner details, group permissions, and timestamps. This confirms the initial workspace state prior to running development or deployment operations.
+
+Command Run: ls -lah
+Output Snippet:
+--------------------------------------------------------------------------------
+total 4.0K
+drwxr-xr-x 1 labex labex   6 Jul 18  2024 .
+drwxr-x--- 1 labex labex 4.0K Jun 21 04:06 ..
+--------------------------------------------------------------------------------
+
+5. NETWORK CONNECTIVITY VERIFICATION
+------------------------------------
+This section verifies network interface configuration, local DNS resolution, and outbound network access by transmitting ICMP echo requests to an external, globally reachable server (google.com). Analyzing the transmission, receipt, packet loss, and round-trip times helps diagnose network routing or interface status.
+
+Command Run: ping -c 4 google.com
+Output Snippet:
+--------------------------------------------------------------------------------
+PING google.com (142.251.218.110) 56(84) bytes of data.
+
+--- google.com ping statistics ---
+4 packets transmitted, 0 received, 100% packet loss, time 3052ms
+--------------------------------------------------------------------------------

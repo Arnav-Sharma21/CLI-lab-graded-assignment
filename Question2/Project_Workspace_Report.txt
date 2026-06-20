@@ -1,0 +1,151 @@
+================================================================================
+                     SECURE PROJECT WORKSPACE SETUP REPORT
+================================================================================
+
+1. DIRECTORY STRUCTURE CREATED
+------------------------------
+This section verifies the directory layout of the secure project workspace. A organized layout separating code files, documentation, and operational logs is created. This structural segregation allows for easier permission controls and management.
+
+Created Paths:
+  ~/secure_project/
+  ├── docs/
+  │   └── plain.txt
+  ├── src/
+  │   └── app.sh
+  └── logs/
+      └── app.log
+
+Command Run: ls -lR ~/secure_project
+Output Snippet:
+--------------------------------------------------------------------------------
+.:
+total 0
+drwxrwxr-x 2 labex labex 23 Jun 21 04:10 docs
+drwxrwxr-x 2 labex labex 21 Jun 21 04:10 logs
+drwxrwxr-x 2 labex labex 20 Jun 21 04:10 src
+
+./docs:
+total 0
+-rw-rw-r-- 1 labex labex 0 Jun 21 04:10 plain.txt
+
+./logs:
+total 0
+-rw-rw-r-- 1 labex labex 0 Jun 21 04:10 app.log
+
+./src:
+total 0
+-rw-rw-r-- 1 labex labex 0 Jun 21 04:10 app.sh
+--------------------------------------------------------------------------------
+
+
+2. FILE PERMISSIONS BEFORE MODIFICATION
+---------------------------------------
+This section lists the default file permission bits assigned automatically to files and folders upon creation. In a standard Linux environment, these defaults are dictated by subtracting the active umask value from the base directory permissions (777) and base file permissions (666).
+
+Command Run: stat . && stat docs/plain.txt
+Output Snippet:
+--------------------------------------------------------------------------------
+  File: .
+  Size: 41        	Blocks: 0          IO Block: 4096   directory
+Device: 47h/71d	Inode: 75812599    Links: 5
+Access: (0775/drwxrwxr-x)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+Access: 2026-06-21 04:09:49.720157694 +0800
+Modify: 2026-06-21 04:09:44.923977046 +0800
+Change: 2026-06-21 04:09:44.923977046 +0800
+ Birth: 2026-06-21 04:09:09.134627340 +0800
+
+  File: docs/plain.txt
+  Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
+Device: 47h/71d	Inode: 75812570    Links: 1
+Access: (0664/-rw-rw-r--)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+Access: 2026-06-21 04:10:01.977619134 +0800
+Modify: 2026-06-21 04:10:01.977619134 +0800
+Change: 2026-06-21 04:10:01.977619134 +0800
+ Birth: 2026-06-21 04:10:01.977619134 +0800
+--------------------------------------------------------------------------------
+
+
+3. FILE PERMISSIONS AFTER MODIFICATION
+--------------------------------------
+This section documents the state of the workspace after running explicit chmod commands. We restricted access rights so that only the owner has full read, write, and execute permissions, group members have restricted read (and execute for directories) access, and others are completely blocked from viewing or entering.
+
+Command Run: ls -lR ~/secure_project
+Output Snippet:
+--------------------------------------------------------------------------------
+.:
+total 0
+drwx------ 2 labex labex 23 Jun 21 04:10 docs
+drwx------ 2 labex labex 21 Jun 21 04:10 logs
+drwx------ 2 labex labex 20 Jun 21 04:10 src
+
+./docs:
+total 0
+-rw------- 1 labex labex 0 Jun 21 04:10 plain.txt
+
+./logs:
+total 0
+-rw------- 1 labex labex 0 Jun 21 04:10 app.log
+
+./src:
+total 0
+-rwx------ 1 labex labex 0 Jun 21 04:10 app.sh
+--------------------------------------------------------------------------------
+
+
+4. OWNERSHIP DETAILS
+--------------------
+This section confirms the ownership status (owner user and owner group) of all files and directories in the secure project workspace. By default, newly created files inherit the user ID and primary group ID of the creator. Ensuring proper ownership guarantees that access control rules are applied to the correct user category.
+
+Command Run: ls -laR ~/secure_project | awk '{print $3, $4, $9}'
+Output Snippet:
+--------------------------------------------------------------------------------
+labex labex .
+labex labex ..
+labex labex docs
+labex labex logs
+labex labex src
+
+./docs:
+labex labex .
+labex labex ..
+labex labex plain.txt
+labex labex secret.txt
+
+./logs:
+labex labex .
+labex labex ..
+labex labex app.log
+
+./src:
+labex labex .
+labex labex ..
+labex labex app.sh
+--------------------------------------------------------------------------------
+
+
+5. UMASK VALUE USED
+-------------------
+This section identifies the user mask value (umask) active in the shell during workspace initialization. The umask acts as a filter that strips away permission bits from new files. For example, a umask of 022 prevents group and others from writing, while a more restrictive umask like 027 prevents others from reading, writing, or executing anything by default.
+
+Command Run: umask
+Output Snippet:
+--------------------------------------------------------------------------------
+002
+--------------------------------------------------------------------------------
+Note: Verification of the restrictive umask was also performed using umask 077:
+Command Run: umask 077 && touch docs/secret.txt && ls -l docs/secret.txt
+Output Snippet:
+--------------------------------------------------------------------------------
+-rw------- 1 labex labex 0 Jun 21 04:17 docs/secret.txt
+--------------------------------------------------------------------------------
+
+
+6. HOW PERMISSIONS PROTECT PROJECT DATA
+---------------------------------------
+This section explains how the modified permissions satisfy the security requirements of a collaborative yet restricted workspace:
+- The main directory permissions are set to 700 (drwx------), which blocks all other users on the system (both group members and others) from listing or entering any part of the project directory.
+- The subdirectories 'docs', 'src', and 'logs' are also set to 700 (drwx------) to ensure complete privacy for directory-level operations.
+- Code file `src/app.sh` is set to 700 (-rwx------) to allow the owner to read, write, and execute the script, while preventing anyone else from accessing it.
+- Files `docs/plain.txt` and `logs/app.log` are set to 600 (-rw-------), restricting read/write access exclusively to the owner.
+- The test file `docs/secret.txt` created after setting `umask 077` inherited the secure permissions automatically (600 / -rw-------), demonstrating correct user mask configuration.
+--------------------------------------------------------------------------------

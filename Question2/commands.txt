@@ -1,0 +1,94 @@
+Question 2 Commands Log
+=======================
+
+1. Command: umask
+   Output:
+   002
+   Explanation: Displays the system's current user mask (umask), which determines the default permissions assigned to newly created files and directories.
+
+2. Command: mkdir ~/secure_project && cd ~/secure_project && mkdir docs src logs
+   Output:
+   [No output or directories created successfully]
+   Explanation: Creates the root project directory 'secure_project' along with subfolders 'docs', 'src', and 'logs' in the user's home folder.
+
+3. Command: touch docs/plain.txt src/app.sh logs/app.log
+   Output:
+   [No output or files created successfully]
+   Explanation: Creates empty placeholder files in each subdirectory to test and verify permission properties.
+
+4. Command: ls -lR
+   Output:
+   .:
+   total 0
+   drwxrwxr-x 2 labex labex 23 Jun 21 04:10 docs
+   drwxrwxr-x 2 labex labex 21 Jun 21 04:10 logs
+   drwxrwxr-x 2 labex labex 20 Jun 21 04:10 src
+
+   ./docs:
+   total 0
+   -rw-rw-r-- 1 labex labex 0 Jun 21 04:10 plain.txt
+
+   ./logs:
+   total 0
+   -rw-rw-r-- 1 labex labex 0 Jun 21 04:10 app.log
+
+   ./src:
+   total 0
+   -rw-rw-r-- 1 labex labex 0 Jun 21 04:10 app.sh
+   Explanation: Lists details of the main directory and recursively displays all files in subfolders, showing their initial permissions and ownership as dictated by the umask.
+
+5. Command: stat . && stat docs/plain.txt
+   Output:
+     File: .
+     Size: 41        	Blocks: 0          IO Block: 4096   directory
+   Device: 47h/71d	Inode: 75812599    Links: 5
+   Access: (0775/drwxrwxr-x)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+   Access: 2026-06-21 04:09:49.720157694 +0800
+   Modify: 2026-06-21 04:09:44.923977046 +0800
+   Change: 2026-06-21 04:09:44.923977046 +0800
+     Birth: 2026-06-21 04:09:09.134627340 +0800
+     File: docs/plain.txt
+     Size: 0         	Blocks: 0          IO Block: 4096   regular empty file
+   Device: 47h/71d	Inode: 75812570    Links: 1
+   Access: (0664/-rw-rw-r--)  Uid: ( 5000/   labex)   Gid: ( 5000/   labex)
+   Access: 2026-06-21 04:10:01.977619134 +0800
+   Modify: 2026-06-21 04:10:01.977619134 +0800
+   Change: 2026-06-21 04:10:01.977619134 +0800
+     Birth: 2026-06-21 04:10:01.977619134 +0800
+   Explanation: Queries detailed inode, size, permissions, and timestamps of the root folder and a sample file before modifying permissions.
+
+6. Command: chmod 700 . docs src logs
+   Output:
+   [No output or permissions modified successfully]
+   Explanation: Restricts directory permissions so that only the owner has access (rwx) to the root workspace and subdirectories docs, src, and logs.
+
+7. Command: chmod 600 docs/plain.txt logs/app.log && chmod 700 src/app.sh
+   Output:
+   [No output or permissions modified successfully]
+   Explanation: Adjusts file permissions so docs/plain.txt and logs/app.log are read/write only for the owner, and src/app.sh is read/write/execute for the owner.
+
+8. Command: ls -lR
+   Output:
+   .:
+   total 0
+   drwx------ 2 labex labex 23 Jun 21 04:10 docs
+   drwx------ 2 labex labex 21 Jun 21 04:10 logs
+   drwx------ 2 labex labex 20 Jun 21 04:10 src
+
+   ./docs:
+   total 0
+   -rw------- 1 labex labex 0 Jun 21 04:10 plain.txt
+
+   ./logs:
+   total 0
+   -rw------- 1 labex labex 0 Jun 21 04:10 app.log
+
+   ./src:
+   total 0
+   -rwx------ 1 labex labex 0 Jun 21 04:10 app.sh
+   Explanation: Displays the final permission bits, owners, and group associations recursively to confirm the successful enforcement of secure access controls.
+
+9. Command: umask 077 && touch docs/secret.txt && ls -l docs/secret.txt
+   Output:
+   -rw------- 1 labex labex 0 Jun 21 04:17 docs/secret.txt
+   Explanation: Sets a highly restrictive user mask of 077 and creates a new file to verify it automatically receives owner-only read/write permissions by default.
